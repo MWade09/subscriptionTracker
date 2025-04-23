@@ -103,6 +103,13 @@
                         <i class="fas fa-sun text-yellow-500 dark:hidden"></i>
                         <i class="fas fa-moon text-indigo-300 hidden dark:block"></i>
                     </button>
+                    <button id="export-data" class="p-2 rounded-lg bg-green-500 hover:bg-green-600 text-white focus:outline-none">
+                        <i class="fas fa-file-export mr-1"></i> Export
+                    </button>
+                    <button id="import-data" class="p-2 rounded-lg bg-blue-500 hover:bg-blue-600 text-white focus:outline-none">
+                        <i class="fas fa-file-import mr-1"></i> Import
+                    </button>
+                    <input type="file" id="import-file" accept=".json" class="hidden">
                 </div>
             </div>
             <p class="text-gray-600 dark:text-gray-400 mt-2">Keep track of all your subscriptions in one place</p>
@@ -317,9 +324,15 @@
             </div>
         </main>
         
+        <!-- Footer section -->
         <footer class="mt-12 text-center text-gray-600 dark:text-gray-400 text-sm">
             <p class="mb-2">Subscription Tracker © 2023</p>
             <p>Created for personal use - Keep track of your subscriptions and never forget a payment</p>
+            <div class="mt-4">
+                <button onclick="clearAllData()" class="text-red-500 hover:text-red-700">
+                    <i class="fas fa-trash-alt mr-1"></i> Clear All Data
+                </button>
+            </div>
         </footer>
     </div>
     
@@ -667,6 +680,84 @@
                 `;
             }).join('');
         }
+                    // Export/Import functionality
+            const exportDataBtn = document.getElementById('export-data');
+            const importDataBtn = document.getElementById('import-data');
+            const importFileInput = document.getElementById('import-file');
+
+            // Export data to JSON file
+            exportDataBtn.addEventListener('click', () => {
+                if (subscriptions.length === 0) {
+                    alert('No subscriptions to export!');
+                    return;
+                }
+                
+                const dataStr = JSON.stringify(subscriptions, null, 2);
+                const dataUri = 'data:application/json;charset=utf-8,'+ encodeURIComponent(dataStr);
+                
+                const exportFileDefaultName = 'subscriptions-backup.json';
+                
+                const linkElement = document.createElement('a');
+                linkElement.setAttribute('href', dataUri);
+                linkElement.setAttribute('download', exportFileDefaultName);
+                linkElement.click();
+            });
+
+            // Trigger file input when import button is clicked
+            importDataBtn.addEventListener('click', () => {
+                importFileInput.click();
+            });
+
+            // Handle file import
+            importFileInput.addEventListener('change', (event) => {
+                const file = event.target.files[0];
+                
+                if (file) {
+                    const reader = new FileReader();
+                    
+                    reader.onload = (e) => {
+                        try {
+                            const importedData = JSON.parse(e.target.result);
+                            
+                            if (Array.isArray(importedData)) {
+                                // Confirm before replacing existing data
+                                if (subscriptions.length > 0) {
+                                    if (confirm('This will replace your existing subscriptions. Continue?')) {
+                                        subscriptions = importedData;
+                                        saveSubscriptions();
+                                        renderSubscriptions();
+                                        alert('Subscriptions imported successfully!');
+                                    }
+                                } else {
+                                    subscriptions = importedData;
+                                    saveSubscriptions();
+                                    renderSubscriptions();
+                                    alert('Subscriptions imported successfully!');
+                                }
+                            } else {
+                                alert('Invalid data format. Please import a valid backup file.');
+                            }
+                        } catch (error) {
+                            alert('Error importing data: ' + error.message);
+                        }
+                        
+                        // Clear the input to allow importing the same file again
+                        importFileInput.value = '';
+                    };
+                    
+                    reader.readAsText(file);
+                }
+            });
+
+            // Add clear all data functionality
+            window.clearAllData = function() {
+                if (confirm('Are you sure you want to delete ALL subscriptions? This cannot be undone!')) {
+                    subscriptions = [];
+                    saveSubscriptions();
+                    renderSubscriptions();
+                }
+            };
     </script>
 </body>
 </html>
+`
